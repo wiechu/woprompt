@@ -1,0 +1,70 @@
+#!/bin/sh
+# woprompt
+# Author: Wieslaw Ochminski
+# Created: 2004-07-03
+
+#
+# Control sequences:
+# 	* bash prompt backslash-escaped special characters 
+#	* %[r|g|b|c|m|y|k] (uppercase for bold) set colors in prompt
+
+# Install:
+#	* add line
+#		. /path/to/woprompt
+#	  at the end of file /etc/profile or $HOME/.bash_profile
+#	* check /etc/bashrc for setting PS1
+
+# 
+# Config files:
+#
+DEFAULTRC="/etc/woprompt.cfg"
+HOMERC="$HOME/.woprompt"
+# See how we were called.
+case "$1" in
+    no)
+	echo "prompt=no" >> $HOMERC
+	TERM=dumb
+	;;
+    quiet)
+	echo "promptmsg=no" >>$HOMERC
+	TERM=dumb
+	;;
+    *)
+	;;
+esac
+
+# Read config files
+[ -f $DEFAULTRC ] && . $DEFAULTRC
+[ -f $HOMERC ] && . $HOMERC
+
+SH="${0#\-}"
+SH="${SH#/bin/}"
+if [ "$SH"="bash" -a "*$TERM" != "*" -a "$TERM" != "dumb" -a "*$prompt" != "*" -a "$prompt" != "no" ]; then
+    [ ! -f $HOMERC ] && echo "prompt='$prompt'" >>$HOMERC
+    prompt=$(echo $prompt| \
+	     sed "  s/%r/`tput sgr0;tput setaf 1`/g
+		    s/%g/`tput sgr0;tput setaf 2`/g
+		    s/%y/`tput sgr0;tput setaf 3`/g
+		    s/%b/`tput sgr0;tput setaf 4`/g
+		    s/%m/`tput sgr0;tput setaf 5`/g
+		    s/%c/`tput sgr0;tput setaf 6`/g
+		    s/%k/`tput sgr0;tput setaf 7`/g
+		    s/%R/`tput bold;tput setaf 1`/g
+		    s/%G/`tput bold;tput setaf 2`/g
+		    s/%Y/`tput bold;tput setaf 3`/g
+		    s/%B/`tput bold;tput setaf 4`/g
+		    s/%M/`tput bold;tput setaf 5`/g
+		    s/%C/`tput bold;tput setaf 6`/g
+		    s/%K/`tput bold;tput setaf 7`/g")
+    prompt="$prompt\[`tput sgr0`\]";
+    PS1="$prompt "
+    if [ "*$promptmsg" != "*no" ]; then
+	cg=`tput setaf 2`
+	ck=`tput setaf 6`
+
+	    echo -ne "\n\t${cg}If you don't like your new prompt, just type: ${ck}woprompt no\n"\
+	     "\t${cg}or edit your \$HOME/.woprompt to design your own prompt.\n"\
+	     "\t${cg}If you don't want to see this message, type: ${ck}woprompt quiet`tput sgr0`\n\n"
+    fi
+    unset HOMERC DEFAULTRC SH prompt promptmsg cg ck
+fi
